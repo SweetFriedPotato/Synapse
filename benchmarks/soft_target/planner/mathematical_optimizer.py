@@ -316,7 +316,7 @@ class MathematicalFailoverOptimizer:
             json.dump(payload, f, ensure_ascii=False, indent=2)
 
     def _trigger_failover_restart(self, policy: str):
-        """Export config, force checkpoint, and terminate process for external restart."""
+        # 재시작을 위한 정보 저장
         if policy not in {"REPLAN", "DEGRADE"}:
             return
         if not self._auto_restart_on_failover:
@@ -325,10 +325,8 @@ class MathematicalFailoverOptimizer:
         payload = self._build_restart_payload(policy)
         checkpoint_path = None
 
-        # Step 1: Export latest partition config first.
         self._write_restart_config(payload)
 
-        # Step 2: Force checkpoint save right before exit.
         if self._checkpoint_saver is not None:
             try:
                 checkpoint_path = self._checkpoint_saver(payload)
@@ -337,9 +335,7 @@ class MathematicalFailoverOptimizer:
                 checkpoint_path = None
 
         if not checkpoint_path:
-            # Guard against infinite restart loops:
-            # if no checkpoint artifact exists, a launcher restart would boot fresh,
-            # re-hit the same failover gate, and restart again.
+            # checkpoint 없이 재시작하면 같은 failover가 반복될 수 있으므로 무한 재시작을 막음.
             self.logger.error(
                 "❌ Restart skipped: checkpoint artifact was not created. "
                 "Continuing in-process to avoid restart loop."
@@ -350,7 +346,6 @@ class MathematicalFailoverOptimizer:
         self._write_restart_config(payload)
         self._pending_restart_transition = None
 
-        # Step 3: Exit for external process supervisor restart.
         self.logger.error(
             f"Failover triggered (Policy: {policy}). "
             f"Partition saved to {os.path.basename(self._restart_config_path)}. "
@@ -679,7 +674,6 @@ class MathematicalFailoverOptimizer:
                                       current_slowdown: float,
                                       failed_gpus: Optional[List[int]] = None,
                                       trigger_confirmed: bool = False,) -> str:
-        """수학적 모델 기반 결정"""
         self._try_freeze_phase0_baseline()
         if self._is_phase0_baseline_active():
             self.logger.info(

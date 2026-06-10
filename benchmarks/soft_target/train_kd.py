@@ -1717,7 +1717,7 @@ def train_tspipe(tspipe_trainer:TSPipe, train_loader, nets, optimizer, criterion
                     "triggered": wall_triggered_fallback,
                 }
 
-        # 5) periodic failover evaluation
+        # 5) 주기적 failover 평가
         failover_gate_active = int(niter) < int(failover_resume_gate_step or 0)
         if (
             failover_optimizer is not None

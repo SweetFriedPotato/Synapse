@@ -3,9 +3,13 @@ import time
 import sys
 from pathlib import Path
 
+SCRIPT_DIR = Path(__file__).resolve().parent
+SOFT_TARGET_DIR = SCRIPT_DIR.parent
+REPO_ROOT = SOFT_TARGET_DIR.parent.parent
+
 _TMPDIR_CANDIDATES = [Path("/dev/shm") / "synapse_profiler_tmp",
                       Path("/tmp") / "synapse_profiler_tmp",
-                      Path(__file__).resolve().parent / ".tmp"]
+                      SCRIPT_DIR / ".tmp"]
 for _candidate in _TMPDIR_CANDIDATES:
     try:
         _candidate.mkdir(parents=True, exist_ok=True)
@@ -20,7 +24,7 @@ os.environ.setdefault("TMPDIR", str(_TMPDIR))
 os.environ.setdefault("TEMP", str(_TMPDIR))
 os.environ.setdefault("TMP", str(_TMPDIR))
 
-sys.path.append("..")
+sys.path.append(str(SOFT_TARGET_DIR))
 import csv
 import argparse
 
@@ -39,8 +43,12 @@ from models.factory import create_model
 from utils import load_pretrained_model
 from tspipe.batch_ops import defaultScatterGatherFn
 
+TEACHER_CKPT = SOFT_TARGET_DIR / "results/base/base-i100-vit-large/model_best.pth.tar"
+STUDENT_CKPT = SOFT_TARGET_DIR / "results/base/base-i100-resnet152/initial_r152.pth.tar"
+DATA_ROOT = REPO_ROOT / "results/base/imagenet100_mini"
+
 tnet = create_model('vit_large', num_class=100, image_size=224)
-checkpoint = torch.load('/workspace/Synapse/Synapse/benchmarks/soft_target/results/base/base-i100-vit-large/model_best.pth.tar', 'cpu')
+checkpoint = torch.load(str(TEACHER_CKPT), map_location='cpu')
 load_pretrained_model(tnet, checkpoint['net'])
 if not isinstance(tnet, torch.nn.Sequential):
     tnet = tnet.to_sequential()
@@ -48,7 +56,7 @@ tnet.cuda()
 print("Teacher model loaded: %s" % tnet)
     
 snet = create_model('resnet152', num_class=100, image_size=224)
-checkpoint = torch.load('/workspace/Synapse/Synapse/benchmarks/soft_target/results/base/base-i100-resnet152/initial_r152.pth.tar', 'cpu')
+checkpoint = torch.load(str(STUDENT_CKPT), map_location='cpu')
 load_pretrained_model(snet, checkpoint['net'])
 if not isinstance(snet, torch.nn.Sequential):
     snet = snet.to_sequential()
@@ -119,7 +127,7 @@ train_dataset = partial(dataset, split='train')
 
 train_loader = torch.utils.data.DataLoader(
     train_dataset(
-        root='/workspace/datasets/imagenet',
+        root=str(DATA_ROOT),
         transform=train_transform
     ),
     batch_size=args.batch_size,
@@ -300,4 +308,3 @@ if IS_VERBOSE:
     for i, layer in enumerate(s_layer_profile):
         print(f"{layer['layer']:>7} {layer['forward_time_ms']:>20.3f} {layer['backward_time_ms']:>20.3f} "
               f"{layer['output_activation_size_kb']:>20} {layer['accum_activation_size_kb']:>20} {layer['parameter_size_kb']:>20} ")
-

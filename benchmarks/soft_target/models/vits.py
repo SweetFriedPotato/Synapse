@@ -76,14 +76,15 @@ class VisionTransformerMoCo(VisionTransformer, SequentialableModel):
         out_h = torch.einsum('m,d->md', [grid_h.flatten(), omega])
         pos_emb = torch.cat([torch.sin(out_w), torch.cos(out_w), torch.sin(out_h), torch.cos(out_h)], dim=1)[None, :, :]
 
-        assert self.num_tokens == 1, 'Assuming one and only one token, [cls]'
+        num_tokens = getattr(self, 'num_tokens', getattr(self, 'num_prefix_tokens', 1))
+        assert num_tokens == 1, 'Assuming one and only one token, [cls]'
         pe_token = torch.zeros([1, 1, self.embed_dim], dtype=torch.float32)
         self.pos_embed = nn.Parameter(torch.cat([pe_token, pos_emb], dim=1))
         self.pos_embed.requires_grad = False
 
     def to_sequential(self: VisionTransformer) -> torch.nn.Sequential:
-        assert self.head_dist is None
-        assert self.dist_token is None
+        assert getattr(self, 'head_dist', None) is None
+        assert getattr(self, 'dist_token', None) is None
         assert isinstance(self.blocks, torch.nn.Sequential)
 
         return torch.nn.Sequential(
@@ -92,7 +93,7 @@ class VisionTransformerMoCo(VisionTransformer, SequentialableModel):
             PosDropWrapper(self.pos_drop, self.pos_embed),
             *self.blocks.children(),
             self.norm,
-            PreLogitsWrapper(self.pre_logits),
+            PreLogitsWrapper(getattr(self, 'pre_logits', nn.Identity())),
             self.head
         )
 

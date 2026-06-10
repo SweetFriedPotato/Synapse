@@ -44,7 +44,7 @@ class SlowdownDetector:
         self.wallclock_slowdown_started_at: Optional[float] = None
         self.wallclock_sustained_duration_sec: float = 0.0
 
-        self.logger.info("✅ SlowdownDetector initialized")
+        self.logger.info("SlowdownDetector initialized")
 
     def record_stage_time(
         self,
@@ -52,9 +52,9 @@ class SlowdownDetector:
         timestamp_sec: Optional[float] = None,
         global_step: Optional[int] = None,
     ):
-        """
-        매 step마다 wall-clock elapsed time(ms)를 기록한다.
-        """
+        
+        # 매 step마다 wall-clock elapsed time(ms)를 기록
+        
         self.stage_times.append(float(stage_time_ms))
         self.batch_count += 1
         self.last_global_step = None if global_step is None else int(global_step)

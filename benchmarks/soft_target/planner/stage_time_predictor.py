@@ -304,7 +304,7 @@ class StageTimePredictor:
         gpu_ids: List[int],
         stage_time_fn,
     ) -> Tuple[List[int], List[float]]:
-        """Minimax DP solver that returns partition sizes and stage times."""
+        # 최대 stage 시간을 최소화하는 DP로 partition 크기와 stage 시간을 계산.
         num_stages = len(gpu_ids)
         if num_layers <= 0 or num_stages <= 0 or num_layers < num_stages:
             return [], []
@@ -358,7 +358,7 @@ class StageTimePredictor:
     
     def _get_snet_stage_time(self, layer_start: int, layer_end: int, gpu_id: int,
                            alpha_g: Dict[int, float], beta_g: Dict[int, float]) -> float:
-        """SNet stage time 계산 (기존 optimizer.py 로직 사용)"""
+        # SNet stage time 계산 (optimizer.py 로직 사용)
         if layer_start > layer_end or layer_end >= self.snet_num_layers:
             return 0.0
             
@@ -380,7 +380,7 @@ class StageTimePredictor:
     
     def _get_tnet_stage_time(self, layer_start: int, layer_end: int, gpu_id: int,
                            alpha_g: Dict[int, float], beta_g: Dict[int, float]) -> float:
-        """TNet stage time 계산 (기존 optimizer.py 로직 사용)"""
+        # TNet stage time 계산 (optimizer.py 로직 사용)
         if layer_start > layer_end or layer_end >= self.tnet_num_layers:
             return 0.0
             
@@ -398,3 +398,4 @@ class StageTimePredictor:
                      beta_g.get(gpu_id, 1.0) * recv_act_time)
         
         return total_time
+

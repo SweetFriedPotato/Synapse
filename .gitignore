@@ -146,6 +146,8 @@ tags
 **/*.qdrep
 imagenet
 **/*.csv
+!benchmarks/soft_target/planner/profile/
+!benchmarks/soft_target/planner/profile/*.csv
 .vscode
 **/*.tar
 **/runs
